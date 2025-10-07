@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
-from VGG import vgg16
-from dataloader import get_cifar10
+# from VGG import vgg16
+from mobilenetv2 import mobilenet_v2
+# from dataloader import get_cifar10
+from dataloader import get_cifar100
 from utils import *
 from quantize import *
 import argparse
@@ -14,9 +16,12 @@ if __name__ == '__main__':
     parser.add_argument('--activation_quant_bits',type=int,default=8,help='Activation quantization bits')
 
     args = parser.parse_args()
-    train_loader,test_loader = get_cifar10(batchsize=2)
-    model = vgg16(num_classes=10, dropout=0.5)
-    model.load_state_dict(torch.load('./checkpoints/test2_vgg16_cifar10.pth',weights_only=True))
+    train_loader,test_loader = get_cifar100(batchsize=2)
+
+    # model = vgg16(num_classes=10, dropout=0.5)
+    model = mobilenet_v2(num_classes=100, dropout=0.5)
+    # model.load_state_dict(torch.load('./checkpoints/test2_vgg16_cifar10.pth',weights_only=True))
+    model.load_state_dict(torch.load('./checkpoints/mobilenetv2_cifar10.pth',weights_only=True)) # NOTE it is actually cifar100, 10 was a mistake
     model.to(device)
     model.eval()
     test_acc = evaluate(model, test_loader, device)
