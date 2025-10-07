@@ -201,9 +201,24 @@ def model_size_bytes_quant(model, weight_bits=8):
 def print_compression(model, weight_bits=8):
     fp32_size = model_size_bytes_fp32(model)
     quant_size = model_size_bytes_quant(model, weight_bits)
-    ratio = fp32_size / max(quant_size, 1)
+    
+    # Calculate weights sizes
+    fp32_weights_size = sum(p.numel() * p.element_size() for p in model.parameters())
+    quant_weights_size = sum(p.numel() for p in model.parameters()) * (weight_bits / 8)
+    
+    # Approximate activations sizes as remainder
+    fp32_activations_size = fp32_size - fp32_weights_size
+    quant_activations_size = quant_size - quant_weights_size
+    
+    # Compute ratios
+    overall_ratio = fp32_size / max(quant_size, 1)
+    weights_ratio = fp32_weights_size / max(quant_weights_size, 1)
+    activations_ratio = fp32_activations_size / max(quant_activations_size, 1)
+    
     print("=== Compression Summary ===")
-    print(f"FP32 model size:   {fp32_size/1024/1024:.2f} MB")
-    print(f"Quantized size:    {quant_size/1024/1024:.2f} MB (weights={weight_bits}-bit)")
-    print(f"Compression ratio: {ratio:.2f}x")
+    print(f"FP32 model size:          {fp32_size / 1024 / 1024:.2f} MB")
+    print(f"Quantized model size:     {quant_size / 1024 / 1024:.2f} MB (weights={weight_bits}-bit)")
+    print(f"Compression ratio overall: {overall_ratio:.2f}x")
+    print(f"Compression ratio weights: {weights_ratio:.2f}x")
+    print(f"Compression ratio activations: {activations_ratio:.2f}x")
     print("===========================")
